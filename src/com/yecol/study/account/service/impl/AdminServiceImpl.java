@@ -7,6 +7,7 @@ import com.yecol.study.account.dao.impl.AdminDaoImpl;
 import com.yecol.study.account.domain.Admin;
 import com.yecol.study.account.service.AdminService;
 import com.yecol.study.util.MD5Utils;
+import com.yecol.study.util.PageBean;
 
 public class AdminServiceImpl implements AdminService {
 
@@ -19,8 +20,8 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public List<Admin> findAll() {
-		return adminDao.findAll();
+	public List<Admin> findAll(String admin_name,String admin_role, int admin_state) {
+		return adminDao.findAll(admin_name,admin_role,admin_state);
 	}
 
 	@Override
@@ -44,6 +45,27 @@ public class AdminServiceImpl implements AdminService {
 		//给密码加密
 		admin.setAdmin_pwd(MD5Utils.stringToMD5(admin.getAdmin_pwd()));
 		adminDao.updateAdmin(admin);
+	}
+
+	@Override
+	public PageBean<Admin> findPageBean(String admin_name, String admin_role, int admin_state, int currentPage,
+			int pageSize) {
+		PageBean<Admin> pageBean = new PageBean<Admin>();
+		//添加当前页
+		pageBean.setCurrentPage(currentPage);
+		//添加每页最大数
+		pageBean.setPageSize(pageSize);
+		//添加总记录数
+		int totalCount = adminDao.findTotalCount(admin_name, admin_role, admin_state);
+		pageBean.setTotalCount(totalCount);
+		//添加总页数
+		int totalPage = totalCount % pageSize == 0 ? totalCount / pageSize : totalCount / pageSize + 1;
+		pageBean.setTotalPage(totalPage);
+		//添加每页的记录数
+		int start = (currentPage - 1)*pageSize;
+		List<Admin> list = adminDao.findByPage(admin_name, admin_role, admin_state, start, pageSize);
+		pageBean.setList(list);
+		return pageBean;
 	}
 	
 }

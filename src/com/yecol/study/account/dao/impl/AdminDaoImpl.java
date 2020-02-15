@@ -1,9 +1,12 @@
 package com.yecol.study.account.dao.impl;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.log4j.Logger;
@@ -35,12 +38,32 @@ public class AdminDaoImpl implements AdminDao {
 		return admin;
 	}
 
+	//根据条件完成分页查询
 	@Override
-	public List<Admin> findAll() {
-		String sql = "select * from tb_admin";
+	public List<Admin> findAll(String admin_name,String admin_role, int admin_state) {
+		String sql = "select * from tb_admin where 1 = 1 ";
+		//绑定动态sql
+		StringBuilder sb = new StringBuilder(sql);
+		List<Object> params = new ArrayList<>();
+		//添加用户名
+		if(null != admin_name && admin_name.length() > 0) {
+			sb.append(" and admin_name like ? ");
+			params.add("%" + admin_name + "%");
+		}
+		//添加角色
+		if(null != admin_role && admin_role.length() > 0) {
+			sb.append(" and admin_role = ? ");
+			params.add(admin_role);
+		}
+		//添加状态
+		if(admin_state != -1) {
+			sb.append(" and admin_state = ? ");
+			params.add(admin_state);
+		}
+		sql = sb.toString();
 		List<Admin> admins = null;
 		try {
-			admins = qr.query(sql, new BeanListHandler<Admin>(Admin.class));
+			admins = qr.query(sql, new BeanListHandler<Admin>(Admin.class),params.toArray());
 		} catch (SQLException e) {
 			logger.error("查询所有管理员错误：" + e.getMessage());
 		}
@@ -90,6 +113,93 @@ public class AdminDaoImpl implements AdminDao {
 		} catch (Exception e) {
 			logger.error("修改管理员异常：" + e.getMessage());
 		}
+	}
+
+	@Override
+	public List<Admin> findByPage(String admin_name, String admin_role, int admin_state, int start, int pageSize) {
+		String sql = "select * from tb_admin where 1 = 1 ";
+		//绑定动态sql
+		StringBuilder sb = new StringBuilder(sql);
+		List<Object> params = new ArrayList<>();
+		//添加用户名
+		if(null != admin_name && admin_name.length() > 0) {
+			sb.append(" and admin_name like ? ");
+			params.add("%" + admin_name + "%");
+		}
+		//添加角色
+		if(null != admin_role && admin_role.length() > 0) {
+			sb.append(" and admin_role = ? ");
+			params.add(admin_role);
+		}
+		//添加状态
+		if(admin_state != -1) {
+			sb.append(" and admin_state = ? ");
+			params.add(admin_state);
+		}
+		//添加分页
+		sb.append(" limit ? , ? ");
+		params.add(start);
+		params.add(pageSize);
+		sql = sb.toString();
+		System.out.println("=======" + sql + "==========");
+		List<Admin> admins = null;
+		try {
+			admins = qr.query(sql, new BeanListHandler<Admin>(Admin.class),params.toArray());
+		} catch (SQLException e) {
+			logger.error("查询所有管理员错误：" + e.getMessage());
+		}
+		return admins;
+	}
+
+	@Override
+	public int findTotalCount(String admin_name,String admin_role, int admin_state) {
+		String sql = "select count(*) from tb_admin where 1=1 ";
+		//绑定动态sql
+		StringBuilder sb = new StringBuilder(sql);
+		List<Object> params = new ArrayList<>();
+		//添加用户名
+		if(null != admin_name && admin_name.length() > 0) {
+			sb.append(" and admin_name like ? ");
+			params.add("%" + admin_name + "%");
+		}
+		//添加角色
+		if(null != admin_role && admin_role.length() > 0) {
+			sb.append(" and admin_role = ? ");
+			params.add(admin_role);
+		}
+		//添加状态
+		if(admin_state != -1) {
+			sb.append(" and admin_state = ? ");
+			params.add(admin_state);
+		}
+		//sql更新
+		sql = sb.toString();
+		try {
+			return qr.query(sql,new ResultSetHandler<Integer>() {
+
+				@Override
+				public Integer handle(ResultSet rs) throws SQLException {
+					if(rs.next()) {
+						return rs.getInt(1);
+					}
+					return 0;
+				}
+				
+			}, params.toArray());
+		} catch (SQLException e) {
+			logger.error("查询所有管理员条数：" + e.getMessage());
+		}
+		return 0;
+	}
+	
+	public static void main(String[] args) {
+		AdminDaoImpl dao = new AdminDaoImpl();
+		/*List<Admin> list = dao.findByPage("", "编辑人员", -1, 6, 5);
+		for (Admin admin : list) {
+			System.out.println(admin);
+		}*/
+		int count = dao.findTotalCount("", "超级管理员", -1);
+		System.out.println(count);
 	}
 	
 }

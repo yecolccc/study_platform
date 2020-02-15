@@ -18,6 +18,7 @@ import com.yecol.study.account.service.impl.AdminServiceImpl;
 import com.yecol.study.course.domain.ResultInfo;
 import com.yecol.study.course.web.servlet.BaseServlet;
 import com.yecol.study.util.JWT;
+import com.yecol.study.util.PageBean;
 
 @WebServlet("/admin/*")
 public class AdminServlet extends BaseServlet {
@@ -43,7 +44,12 @@ public class AdminServlet extends BaseServlet {
 	}
 	
 	public void findAllAdmin(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		List<Admin> admins = adminService.findAll();
+		//获取参数	用户名 身份 状态
+		String admin_name = request.getParameter("admin_name");
+		String admin_role = request.getParameter("admin_role");
+		String admin_state = request.getParameter("admin_state");
+		
+		List<Admin> admins = adminService.findAll(admin_name,admin_role,Integer.parseInt(admin_state));
 		String json = ResultInfo.success(admins).toJson();
 		sendJson(json, request, response);
 		
@@ -97,6 +103,34 @@ public class AdminServlet extends BaseServlet {
 		}
 //		System.out.println(admin);
 		adminService.updateAdmin(admin);
+		
+	}
+	
+	public void findByPageAdmin(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		//获取参数	用户名 身份 状态
+		String admin_name = request.getParameter("admin_name");
+		String admin_role = request.getParameter("admin_role");
+		String admin_state = request.getParameter("admin_state");
+		String currentPage = request.getParameter("currentPage");
+		String pageSize = request.getParameter("pageSize");
+		int state;
+		//维护变量	这样做的目的是前端发送请求过来时不传数据也能有默认值
+		if(admin_state == null || admin_state.length() == 0) {
+			state = -1;
+		} else {
+			state = Integer.parseInt(admin_state);
+		}
+		int cur = 1;
+		if(currentPage != null && currentPage.length() > 0) {
+			cur = Integer.parseInt(currentPage);
+		}
+		int ps = 5;
+		if(pageSize != null && pageSize.length() > 0 && Integer.parseInt(pageSize) > 0) {
+			ps = Integer.parseInt(pageSize);
+		}
+		PageBean<Admin> pageBean = adminService.findPageBean(admin_name, admin_role, state, cur, ps);
+		String json = ResultInfo.success(pageBean).toJson();
+		sendJson(json, request, response);
 		
 	}
 	
